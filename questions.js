@@ -39,8 +39,7 @@ window.QUIZ_QUESTIONS = [
     no: 1,
     type: "mc",
     difficulty: "하",
-    question: "(발문 미확인)",
-    note: "녹음 시작 전 구간으로 추정되어 발문이 확인되지 않았습니다. 보기와 해설 기준으로 학습하세요.",
+    question: "초저성장시대에 경영자가 고려해야 할 것은?",
     choices: [
       "위험뿐만 아니라 불확실성을 고려한다.",
       "위험을 고려한다.",

@@ -166,6 +166,27 @@
   .slot { text-align: center; font-size: 0.8rem; padding: 6px 0; border-radius: 8px; background: var(--surface-2); color: var(--muted); }
   .slot.ok { background: var(--correct-bg); color: var(--correct); font-weight: 700; }
   .slot.short { border: 1px dashed var(--border); }
+
+  .nav-strip { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+  .nav-dot {
+    width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--muted); font: inherit; font-size: 0.78rem;
+    cursor: pointer; padding: 0;
+  }
+  .nav-dot.cur { outline: 2px solid var(--primary); color: var(--text); font-weight: 700; }
+  .nav-dot.ok { background: var(--correct-bg); color: var(--correct); border-color: var(--correct); }
+  .nav-dot.ng { background: var(--wrong-bg); color: var(--wrong); border-color: var(--wrong); }
+  .browse-item { border-top: 1px solid var(--border); padding: 16px 0; }
+  .browse-item:first-child { border-top: none; padding-top: 4px; }
+  .browse-item .q-text { font-size: 1rem; }
+  .browse-choices { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+  .browse-choice { display: flex; gap: 8px; padding: 6px 10px; border-radius: 8px; font-size: 0.95rem; }
+  .browse-choice .mark { color: var(--primary); font-weight: 700; flex-shrink: 0; }
+  .browse-choice.ans { background: var(--correct-bg); color: var(--correct); font-weight: 500; }
+  .browse-choice.ans .mark { color: var(--correct); }
+  .browse-item .explain { margin-top: 8px; font-size: 0.9rem; }
+  .toggle-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.9rem; }
+  .sticky-top { position: sticky; top: 0; background: var(--surface); padding: 6px 0 8px; z-index: 2; }
 </style>
 </head>
 <body>
@@ -202,7 +223,23 @@
     </div>
     <div class="btn-row">
       <button class="btn btn-primary grow" id="start-btn">시험 시작</button>
+      <button class="btn grow" id="browse-btn">문제·정답 훑어보기</button>
     </div>
+  </section>
+
+  <!-- 2-1. 훑어보기 화면 -->
+  <section id="browse" class="card hidden">
+    <div class="sticky-top">
+      <div class="toggle-row">
+        <strong>전체 문제 · 정답 · 해설</strong>
+        <label class="radio-line" style="margin-left:auto"><input type="checkbox" id="browse-hide-ans"> 정답 가리기</label>
+      </div>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn" id="browse-home-btn">처음으로</button>
+        <button class="btn btn-primary grow" id="browse-start-btn">시험 시작</button>
+      </div>
+    </div>
+    <div id="browse-list"></div>
   </section>
 
   <!-- 3. 문제 화면 -->
@@ -212,6 +249,7 @@
       <span id="prog-score"></span>
     </div>
     <div class="bar"><div id="prog-bar"></div></div>
+    <div class="nav-strip" id="nav-strip"></div>
 
     <div class="q-head">
       <span class="badge type" id="q-type"></span>
@@ -238,9 +276,12 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn" id="quit-btn">그만두기</button>
+      <button class="btn" id="prev-btn">← 이전</button>
       <button class="btn btn-primary grow" id="check-btn" disabled>정답 확인</button>
-      <button class="btn btn-primary grow hidden" id="next-btn">다음 문제</button>
+      <button class="btn grow" id="next-btn">다음 →</button>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn grow" id="quit-btn">시험 종료 · 결과 보기</button>
     </div>
   </section>
 
@@ -306,14 +347,14 @@
   $("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
   $("logout-btn").addEventListener("click", () => {
     safeDel(SESSION_KEY);
-    [ $("lobby"), $("quiz"), $("summary") ].forEach(hide);
+    [ $("lobby"), $("quiz"), $("summary"), $("browse") ].forEach(hide);
     show($("gate"));
     $("pw").focus();
   });
 
   // ---------- 로비 ----------
   function openLobby() {
-    hide($("gate")); hide($("quiz")); hide($("summary"));
+    hide($("gate")); hide($("quiz")); hide($("summary")); hide($("browse"));
     show($("lobby"));
     $("st-total").textContent = META.totalQuestions;
     $("st-ready").textContent = ALL.length;
@@ -340,7 +381,94 @@
     $("start-btn").disabled = ALL.length === 0;
   }
 
+  // ---------- 훑어보기 ----------
+  function openBrowse() {
+    hide($("lobby")); hide($("quiz")); hide($("summary")); hide($("gate"));
+    show($("browse"));
+    renderBrowse();
+    window.scrollTo({ top: 0 });
+  }
+  function renderBrowse() {
+    const hideAns = $("browse-hide-ans").checked;
+    const list = $("browse-list");
+    list.innerHTML = "";
+    ALL.forEach((q) => {
+      const d = document.createElement("div");
+      d.className = "browse-item";
+      const head = document.createElement("div");
+      head.className = "q-head";
+      head.innerHTML = `<span class="badge type"></span><span class="badge"></span><span class="badge"></span>`;
+      const b = head.querySelectorAll(".badge");
+      b[0].textContent = q.type === "mc" ? "객관식" : "주관식";
+      b[1].textContent = `문제 ${q.no}`;
+      b[2].textContent = q.difficulty ? `난이도 ${q.difficulty}` : "난이도 미확인";
+      d.appendChild(head);
+      if (q.note) { const n = document.createElement("div"); n.className = "q-note"; n.textContent = q.note; d.appendChild(n); }
+      const qt = document.createElement("div"); qt.className = "q-text"; qt.textContent = q.question; d.appendChild(qt);
+
+      if (q.type === "mc") {
+        const ch = document.createElement("div"); ch.className = "browse-choices";
+        q.choices.forEach((c, i) => {
+          const row = document.createElement("div");
+          row.className = "browse-choice" + (!hideAns && i === q.answer ? " ans" : "");
+          row.innerHTML = `<span class="mark"></span><span></span>`;
+          row.firstChild.textContent = MARKS[i];
+          row.lastChild.textContent = c;
+          ch.appendChild(row);
+        });
+        d.appendChild(ch);
+      }
+      if (!hideAns) {
+        const ex = document.createElement("div"); ex.className = "explain";
+        if (q.type === "mc") {
+          const a = document.createElement("div");
+          a.innerHTML = "<strong>정답</strong>";
+          a.appendChild(document.createTextNode(`${MARKS[q.answer]} ${q.choices[q.answer]}`));
+          ex.appendChild(a); ex.appendChild(document.createElement("br"));
+        } else {
+          const a = document.createElement("div");
+          a.innerHTML = "<strong>모범 답안</strong>";
+          a.appendChild(document.createTextNode(q.model || (q.answers || []).join(", ")));
+          ex.appendChild(a); ex.appendChild(document.createElement("br"));
+        }
+        const e = document.createElement("div");
+        e.innerHTML = "<strong>해설</strong>";
+        e.appendChild(document.createTextNode(q.explanation || "해설 미확인"));
+        ex.appendChild(e);
+        d.appendChild(ex);
+      } else {
+        const btn = document.createElement("button");
+        btn.className = "link-btn"; btn.textContent = "정답 보기"; btn.style.marginTop = "6px";
+        btn.addEventListener("click", () => {
+          btn.remove();
+          const ex = document.createElement("div"); ex.className = "explain";
+          const ansText = q.type === "mc" ? `${MARKS[q.answer]} ${q.choices[q.answer]}` : (q.model || (q.answers || []).join(", "));
+          const a = document.createElement("div");
+          a.innerHTML = `<strong>${q.type === "mc" ? "정답" : "모범 답안"}</strong>`;
+          a.appendChild(document.createTextNode(ansText));
+          ex.appendChild(a); ex.appendChild(document.createElement("br"));
+          const e = document.createElement("div");
+          e.innerHTML = "<strong>해설</strong>";
+          e.appendChild(document.createTextNode(q.explanation || "해설 미확인"));
+          ex.appendChild(e);
+          d.appendChild(ex);
+          if (q.type === "mc") d.querySelectorAll(".browse-choice")[q.answer].classList.add("ans");
+        });
+        d.appendChild(btn);
+      }
+      list.appendChild(d);
+    });
+  }
+  $("browse-btn").addEventListener("click", openBrowse);
+  $("browse-home-btn").addEventListener("click", openLobby);
+  $("browse-start-btn").addEventListener("click", () => startQuiz(ALL));
+  $("browse-hide-ans").addEventListener("change", renderBrowse);
+
   // ---------- 시험 진행 ----------
+  // answers[i] : null(미채점) 또는 { picked, text, correct }
+  // drafts[i]  : 채점 전 임시 선택/입력 (뒤로 갔다 와도 유지)
+  let drafts = [];
+
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -357,12 +485,7 @@
     return list.map((q) => {
       if (q.type === "mc" && shuffleChoices) {
         const perm = shuffle(q.choices.map((_, i) => i));
-        return {
-          ...q,
-          choices: perm.map(i => q.choices[i]),
-          answer: perm.indexOf(q.answer),
-          _orig: q,
-        };
+        return { ...q, choices: perm.map(i => q.choices[i]), answer: perm.indexOf(q.answer), _orig: q };
       }
       return { ...q, _orig: q };
     });
@@ -371,22 +494,49 @@
   function startQuiz(source) {
     if (!source.length) return;
     queue = prepareQueue(source);
-    idx = 0; answers = [];
-    hide($("lobby")); hide($("summary"));
+    idx = 0;
+    answers = queue.map(() => null);
+    drafts = queue.map(() => null);
+    hide($("lobby")); hide($("summary")); hide($("browse"));
     show($("quiz"));
     renderQuestion();
   }
 
   $("start-btn").addEventListener("click", () => startQuiz(ALL));
 
+  function gradedCount() { return answers.filter(a => a).length; }
+  function correctCount() { return answers.filter(a => a && a.correct).length; }
+
+  function renderNavStrip() {
+    const strip = $("nav-strip");
+    strip.innerHTML = "";
+    queue.forEach((q, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "nav-dot" + (i === idx ? " cur" : "") + (answers[i] ? (answers[i].correct ? " ok" : " ng") : "");
+      b.textContent = i + 1;
+      b.title = `문제 ${q.no}`;
+      b.addEventListener("click", () => goTo(i));
+      strip.appendChild(b);
+    });
+  }
+
+  function goTo(i) {
+    if (i < 0 || i >= queue.length) return;
+    idx = i;
+    renderQuestion();
+  }
+
   function renderQuestion() {
     const q = queue[idx];
-    selected = null; checked = false;
+    const a = answers[idx];
+    checked = !!a;
+    selected = a ? a.picked : (drafts[idx] !== null && q.type === "mc" ? drafts[idx] : null);
 
     $("prog-text").textContent = `${idx + 1} / ${queue.length}`;
-    const correctSoFar = answers.filter(a => a.correct).length;
-    $("prog-score").textContent = `정답 ${correctSoFar} / ${answers.length}`;
-    $("prog-bar").style.width = `${(idx / queue.length) * 100}%`;
+    $("prog-score").textContent = `정답 ${correctCount()} / 채점 ${gradedCount()}`;
+    $("prog-bar").style.width = `${(gradedCount() / queue.length) * 100}%`;
+    renderNavStrip();
 
     $("q-type").textContent = q.type === "mc" ? "객관식" : "주관식";
     $("q-no").textContent = `문제 ${q.no}`;
@@ -395,8 +545,8 @@
     if (q.note) { $("q-note").textContent = q.note; show($("q-note")); } else { hide($("q-note")); }
 
     hide($("result")); hide($("selfgrade"));
-    hide($("next-btn")); show($("check-btn"));
-    $("check-btn").disabled = true;
+    $("prev-btn").disabled = idx === 0;
+    $("next-btn").disabled = idx === queue.length - 1;
 
     if (q.type === "mc") {
       show($("mc-area")); hide($("short-area"));
@@ -408,20 +558,37 @@
         b.type = "button";
         b.innerHTML = `<span class="mark">${MARKS[i]}</span><span></span>`;
         b.lastChild.textContent = c;
+        if (!checked && selected === i) b.classList.add("selected");
+        if (checked) {
+          b.disabled = true;
+          if (i === q.answer) b.classList.add("correct");
+          else if (i === a.picked) b.classList.add("wrong");
+        }
         b.addEventListener("click", () => {
           if (checked) return;
-          selected = i;
+          selected = i; drafts[idx] = i;
           area.querySelectorAll(".choice").forEach((el, k) => el.classList.toggle("selected", k === i));
           $("check-btn").disabled = false;
         });
         area.appendChild(b);
       });
+      $("check-btn").disabled = checked || selected === null;
     } else {
       hide($("mc-area")); show($("short-area"));
       const ta = $("short-input");
-      ta.value = ""; ta.disabled = false;
-      $("check-btn").disabled = false;
-      setTimeout(() => ta.focus(), 50);
+      ta.value = checked ? (a.text || "") : (drafts[idx] || "");
+      ta.disabled = checked;
+      $("check-btn").disabled = checked;
+      if (!checked) setTimeout(() => ta.focus(), 50);
+    }
+
+    if (checked) {
+      show($("check-btn"));
+      $("check-btn").textContent = "채점 완료";
+      showResult(q, a.correct, false);
+      if (q.type === "short") show($("selfgrade"));
+    } else {
+      $("check-btn").textContent = "정답 확인";
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -433,10 +600,7 @@
   function gradeShort(q, text) {
     const t = normalize(text);
     if (!t) return false;
-    return (q.answers || []).some(a => {
-      const n = normalize(a);
-      return n && t.includes(n);
-    });
+    return (q.answers || []).some(a => { const n = normalize(a); return n && t.includes(n); });
   }
 
   function checkAnswer() {
@@ -448,8 +612,7 @@
       if (selected === null) return;
       picked = selected;
       correct = selected === q.answer;
-      const btns = $("mc-area").querySelectorAll(".choice");
-      btns.forEach((b, i) => {
+      $("mc-area").querySelectorAll(".choice").forEach((b, i) => {
         b.disabled = true;
         if (i === q.answer) b.classList.add("correct");
         else if (i === selected) b.classList.add("wrong");
@@ -461,11 +624,16 @@
       show($("selfgrade"));
     }
     checked = true;
-    answers.push({ q, picked, text, correct });
-    showResult(q, correct);
+    answers[idx] = { picked, text, correct };
+    $("check-btn").disabled = true;
+    $("check-btn").textContent = "채점 완료";
+    $("prog-score").textContent = `정답 ${correctCount()} / 채점 ${gradedCount()}`;
+    $("prog-bar").style.width = `${(gradedCount() / queue.length) * 100}%`;
+    renderNavStrip();
+    showResult(q, correct, true);
   }
 
-  function showResult(q, correct) {
+  function showResult(q, correct, focusNext) {
     const line = $("result-line");
     line.className = "result-line " + (correct ? "ok" : "ng");
     if (q.type === "mc") {
@@ -487,44 +655,47 @@
     e.appendChild(document.createTextNode(q.explanation || "해설 미확인"));
     ex.appendChild(e);
     show($("result"));
-    hide($("check-btn")); show($("next-btn"));
-    $("next-btn").textContent = idx + 1 >= queue.length ? "결과 보기" : "다음 문제";
-    $("next-btn").focus();
+    if (focusNext) {
+      if (idx === queue.length - 1) $("quit-btn").focus(); else $("next-btn").focus();
+    }
   }
 
   $("selfgrade").querySelectorAll("button").forEach(b => {
     b.addEventListener("click", () => {
-      const last = answers[answers.length - 1];
-      if (!last) return;
-      last.correct = b.dataset.grade === "1";
-      showResult(last.q, last.correct);
+      const a = answers[idx];
+      if (!a) return;
+      a.correct = b.dataset.grade === "1";
+      $("prog-score").textContent = `정답 ${correctCount()} / 채점 ${gradedCount()}`;
+      renderNavStrip();
+      showResult(queue[idx], a.correct, false);
     });
   });
 
   $("check-btn").addEventListener("click", checkAnswer);
+  $("short-input").addEventListener("input", (e) => { if (!checked) drafts[idx] = e.target.value; });
   $("short-input").addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") checkAnswer();
   });
-  $("next-btn").addEventListener("click", () => {
-    idx++;
-    if (idx >= queue.length) finish(); else renderQuestion();
-  });
+  $("prev-btn").addEventListener("click", () => goTo(idx - 1));
+  $("next-btn").addEventListener("click", () => goTo(idx + 1));
   $("quit-btn").addEventListener("click", () => {
-    if (answers.length === 0 || confirm("지금까지의 진행을 종료하고 결과를 볼까요?")) {
-      if (answers.length === 0) openLobby(); else finish();
+    const left = queue.length - gradedCount();
+    if (gradedCount() === 0) {
+      if (confirm("아직 채점한 문제가 없습니다. 시험을 종료하고 처음으로 돌아갈까요?")) openLobby();
+      return;
     }
+    if (left === 0 || confirm(`아직 채점하지 않은 문제가 ${left}개 있습니다. 채점하지 않은 문제는 오답으로 처리됩니다. 종료할까요?`)) finish();
   });
 
   // ---------- 결과 ----------
   function finish() {
     hide($("quiz")); show($("summary"));
-    const total = answers.length;
-    const correct = answers.filter(a => a.correct).length;
+    const total = queue.length;
+    const correct = correctCount();
     const pct = total ? Math.round((correct / total) * 100) : 0;
     $("sum-score").textContent = `${correct} / ${total}`;
-    $("sum-sub").textContent = `정답률 ${pct}%`;
+    $("sum-sub").textContent = `정답률 ${pct}% · 채점 ${gradedCount()} / ${total}`;
 
-    // 최고 점수는 전체 확인 문제를 순서/무작위 상관없이 모두 풀었을 때만 기록
     if (total === ALL.length && total > 0) {
       const prev = safeGet(BEST_KEY);
       const prevPct = prev ? parseInt(prev, 10) : -1;
@@ -533,24 +704,24 @@
 
     const review = $("review");
     review.innerHTML = "";
-    answers.forEach(a => {
-      const q = a.q;
+    queue.forEach((q, i) => {
+      const a = answers[i];
       const d = document.createElement("div");
       d.className = "review-item";
       const head = document.createElement("div");
       head.className = "rq";
-      head.textContent = `${a.correct ? "✅" : "❌"} 문제 ${q.no}. ${q.question}`;
+      head.textContent = `${a ? (a.correct ? "✅" : "❌") : "⬜"} 문제 ${q.no}. ${q.question}`;
       d.appendChild(head);
       const ra = document.createElement("div");
       ra.className = "ra";
       if (q.type === "mc") {
         ra.innerHTML = "정답: <span></span> · 내 답: <span></span>";
         ra.querySelectorAll("span")[0].textContent = `${MARKS[q.answer]} ${q.choices[q.answer]}`;
-        ra.querySelectorAll("span")[1].textContent = a.picked === null ? "-" : `${MARKS[a.picked]} ${q.choices[a.picked]}`;
+        ra.querySelectorAll("span")[1].textContent = a && a.picked !== null ? `${MARKS[a.picked]} ${q.choices[a.picked]}` : "(미채점)";
       } else {
         ra.innerHTML = "모범 답안: <span></span><br>내 답: <span></span>";
         ra.querySelectorAll("span")[0].textContent = q.model || (q.answers || []).join(", ");
-        ra.querySelectorAll("span")[1].textContent = a.text || "-";
+        ra.querySelectorAll("span")[1].textContent = a ? (a.text || "-") : "(미채점)";
       }
       d.appendChild(ra);
       review.appendChild(d);
@@ -561,7 +732,7 @@
 
   $("retry-btn").addEventListener("click", () => startQuiz(ALL));
   $("retry-wrong-btn").addEventListener("click", () => {
-    const wrong = answers.filter(a => !a.correct).map(a => a.q._orig || a.q);
+    const wrong = queue.filter((q, i) => !(answers[i] && answers[i].correct)).map(q => q._orig || q);
     startQuiz(wrong);
   });
   $("home-btn").addEventListener("click", openLobby);
