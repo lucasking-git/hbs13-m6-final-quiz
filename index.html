@@ -187,6 +187,17 @@
   .browse-item .explain { margin-top: 8px; font-size: 0.9rem; }
   .toggle-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.9rem; }
   .sticky-top { position: sticky; top: 0; background: var(--surface); padding: 6px 0 8px; z-index: 2; }
+  .table-wrap { overflow-x: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: 10px; -webkit-overflow-scrolling: touch; }
+  .table-cap { font-size: 0.8rem; color: var(--muted); padding: 9px 11px 2px; }
+  .data-table { border-collapse: collapse; width: 100%; font-size: 0.76rem; }
+  .data-table th, .data-table td { padding: 6px 11px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table th { background: var(--surface-2); text-align: left; font-weight: 500; color: var(--muted); }
+  .data-table th.num, .data-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .data-table tr.row-bold { background: var(--surface-2); }
+  .data-table tr.row-bold td { font-weight: 700; }
+  .data-table td.indent { padding-left: 24px; color: var(--muted); }
+  .scroll-hint { font-size: 0.76rem; color: var(--muted); margin: -6px 0 10px; }
 </style>
 </head>
 <body>
@@ -258,6 +269,7 @@
     </div>
     <div class="q-note hidden" id="q-note"></div>
     <div class="q-text" id="q-text"></div>
+    <div id="q-table" class="hidden"></div>
 
     <div id="mc-area" class="choices"></div>
 
@@ -381,6 +393,60 @@
     $("start-btn").disabled = ALL.length === 0;
   }
 
+  // ---------- 데이터 표 ----------
+  function buildTable(t) {
+    const wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    if (t.caption) {
+      const c = document.createElement("div");
+      c.className = "table-cap";
+      c.textContent = t.caption;
+      wrap.appendChild(c);
+    }
+    const tbl = document.createElement("table");
+    tbl.className = "data-table";
+    const thead = document.createElement("thead");
+    const hr = document.createElement("tr");
+    (t.headers || []).forEach((h, i) => {
+      const th = document.createElement("th");
+      th.textContent = h;
+      if (i > 0) th.className = "num";
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    tbl.appendChild(thead);
+    const tb = document.createElement("tbody");
+    (t.rows || []).forEach((r) => {
+      const tr = document.createElement("tr");
+      if (r.bold) tr.className = "row-bold";
+      const td0 = document.createElement("td");
+      td0.textContent = r.label;
+      if (r.indent) td0.className = "indent";
+      tr.appendChild(td0);
+      (r.values || []).forEach((v) => {
+        const td = document.createElement("td");
+        td.className = "num";
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    wrap.appendChild(tbl);
+    return wrap;
+  }
+
+  function attachTable(host, q) {
+    host.innerHTML = "";
+    if (!q.table) { hide(host); return; }
+    host.appendChild(buildTable(q.table));
+    const hint = document.createElement("div");
+    hint.className = "scroll-hint";
+    hint.textContent = "표가 잘리면 좌우로 밀어서 보세요.";
+    host.appendChild(hint);
+    show(host);
+  }
+
   // ---------- 훑어보기 ----------
   function openBrowse() {
     hide($("lobby")); hide($("quiz")); hide($("summary")); hide($("gate"));
@@ -405,6 +471,7 @@
       d.appendChild(head);
       if (q.note) { const n = document.createElement("div"); n.className = "q-note"; n.textContent = q.note; d.appendChild(n); }
       const qt = document.createElement("div"); qt.className = "q-text"; qt.textContent = q.question; d.appendChild(qt);
+      if (q.table) { const tw = document.createElement("div"); attachTable(tw, q); d.appendChild(tw); }
 
       if (q.type === "mc") {
         const ch = document.createElement("div"); ch.className = "browse-choices";
@@ -543,6 +610,7 @@
     $("q-diff").textContent = q.difficulty ? `난이도 ${q.difficulty}` : "난이도 미확인";
     $("q-text").textContent = q.question;
     if (q.note) { $("q-note").textContent = q.note; show($("q-note")); } else { hide($("q-note")); }
+    attachTable($("q-table"), q);
 
     hide($("result")); hide($("selfgrade"));
     $("prev-btn").disabled = idx === 0;

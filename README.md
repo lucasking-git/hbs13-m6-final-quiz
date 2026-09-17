@@ -22,6 +22,8 @@ GitHub Actions(`.github/workflows/deploy.yml`)가 푸시 시 사이트 파일을
 
 - 객관식: `type: "mc"`, `choices` 4개, `answer`는 0부터 시작하는 정답 인덱스(①=0)
 - 주관식: `type: "short"`, `answers`에 정답 키워드 배열, `model`에 모범 답안
+- `note`: 문제 위에 표시할 안내문 (선지 미확정 안내 등)
+- `table`: 문제에 딸린 데이터 표 (재무제표 등)
 
 로비 화면에 1~25번 슬롯이 표시되며, 확인된 문제만 초록색으로 표시됩니다.
 
