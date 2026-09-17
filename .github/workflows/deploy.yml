@@ -22,11 +22,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Collect site files
+        run: |
+          mkdir -p _site
+          cp index.html questions.js README.md .nojekyll _site/
       - name: Publish to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: ./_site
           publish_branch: gh-pages
-          exclude_assets: ".github,.git"
           commit_message: "Deploy ${{ github.sha }}"
