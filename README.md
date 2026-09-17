@@ -10,7 +10,7 @@ HBS 6모듈 재무 시험 Final Test를 연습할 수 있는 정적 웹 앱입�
 
 ## 배포
 
-GitHub Actions(`.github/workflows/deploy.yml`)가 푸시 시 GitHub Pages로 자동 배포합니다.
+GitHub Actions(`.github/workflows/deploy.yml`)가 푸시 시 사이트 파일을 `gh-pages` 브랜치로 발행하고, GitHub Pages가 그 브랜치를 서빙합니다.
 
 배포 주소: `https://lucasking-git.github.io/hbs13-m6-final-quiz/`
 
