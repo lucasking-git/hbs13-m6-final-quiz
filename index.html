@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HBS13 재무 Final Test</title>
+<meta name="description" content="HBS 13기 6모듈 재무 Final Test 연습 퀴즈">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --text: #1b2230;
+    --muted: #64708a;
+    --border: #d9dee8;
+    --primary: #2f5bea;
+    --primary-text: #ffffff;
+    --correct: #1e8e5a;
+    --correct-bg: #e4f5ec;
+    --wrong: #d3432f;
+    --wrong-bg: #fbe9e6;
+    --warn-bg: #fff6e0;
+    --warn: #9a6500;
+    --shadow: 0 2px 10px rgba(20, 30, 60, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161f;
+      --surface: #1b2130;
+      --surface-2: #232b3d;
+      --text: #e7ebf3;
+      --muted: #9aa5bd;
+      --border: #333d52;
+      --primary: #6b8cff;
+      --primary-text: #0d1220;
+      --correct: #4fce8f;
+      --correct-bg: #173327;
+      --wrong: #ff7b68;
+      --wrong-bg: #3a1f1b;
+      --warn-bg: #3a2f14;
+      --warn: #ffcf6b;
+      --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161f;
+    --surface: #1b2130;
+    --surface-2: #232b3d;
+    --text: #e7ebf3;
+    --muted: #9aa5bd;
+    --border: #333d52;
+    --primary: #6b8cff;
+    --primary-text: #0d1220;
+    --correct: #4fce8f;
+    --correct-bg: #173327;
+    --wrong: #ff7b68;
+    --wrong-bg: #3a1f1b;
+    --warn-bg: #3a2f14;
+    --warn: #ffcf6b;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: 1.45rem; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .hidden { display: none !important; }
+  label { display: block; font-weight: 500; margin-bottom: 8px; }
+  input[type="password"], input[type="text"], textarea {
+    width: 100%;
+    font: inherit;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  input:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  textarea { min-height: 90px; resize: vertical; }
+  .btn {
+    display: inline-block;
+    font: inherit;
+    font-weight: 500;
+    padding: 11px 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 0.05s, opacity 0.15s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .btn-row .grow { flex: 1; }
+  .error { color: var(--wrong); font-size: 0.9rem; margin-top: 8px; min-height: 1.4em; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+  .stat { background: var(--surface-2); border-radius: 10px; padding: 12px 8px; text-align: center; }
+  .stat .num { font-size: 1.4rem; font-weight: 700; }
+  .stat .lbl { color: var(--muted); font-size: 0.8rem; }
+  .notice { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 14px; font-size: 0.9rem; }
+  .option-group { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .radio-line { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 400; }
+  .radio-line input { width: auto; }
+
+  .progress-wrap { display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; color: var(--muted); margin-bottom: 8px; }
+  .bar { height: 6px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin-bottom: 18px; }
+  .bar > div { height: 100%; background: var(--primary); width: 0; transition: width 0.25s; }
+  .q-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .badge { font-size: 0.75rem; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-weight: 500; }
+  .badge.type { background: var(--primary); color: var(--primary-text); }
+  .q-text { font-size: 1.08rem; font-weight: 500; white-space: pre-wrap; margin: 6px 0 4px; }
+  .q-note { font-size: 0.85rem; color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; }
+  .choices { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .choice {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--surface); cursor: pointer; text-align: left; font: inherit; color: var(--text);
+    width: 100%;
+  }
+  .choice:hover:not(:disabled) { border-color: var(--primary); }
+  .choice .mark { font-weight: 700; color: var(--primary); flex-shrink: 0; }
+  .choice.selected { border-color: var(--primary); background: var(--surface-2); }
+  .choice.correct { border-color: var(--correct); background: var(--correct-bg); }
+  .choice.wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+  .choice:disabled { cursor: default; }
+  .result-line { margin-top: 14px; font-weight: 700; }
+  .result-line.ok { color: var(--correct); }
+  .result-line.ng { color: var(--wrong); }
+  .explain {
+    margin-top: 12px; padding: 14px; border-radius: 10px; background: var(--surface-2);
+    white-space: pre-wrap; font-size: 0.95rem;
+  }
+  .explain strong { display: block; margin-bottom: 4px; }
+  .selfgrade { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.9rem; }
+
+  .review-item { border-top: 1px solid var(--border); padding: 14px 0; }
+  .review-item:first-child { border-top: none; }
+  .review-item .rq { font-weight: 500; white-space: pre-wrap; }
+  .review-item .ra { font-size: 0.92rem; margin-top: 4px; }
+  .review-item .ra span { font-weight: 700; }
+  .score-big { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 6px 0; }
+  .score-sub { text-align: center; color: var(--muted); margin-bottom: 8px; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 24px; }
+  .link-btn { background: none; border: none; color: var(--primary); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+  .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; }
+  .slot { text-align: center; font-size: 0.8rem; padding: 6px 0; border-radius: 8px; background: var(--surface-2); color: var(--muted); }
+  .slot.ok { background: var(--correct-bg); color: var(--correct); font-weight: 700; }
+  .slot.short { border: 1px dashed var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1 id="title">HBS 13기 6모듈 재무 Final Test</h1>
+    <p>연습용 모의고사 · 객관식 20문제(4지선다) + 주관식 5문제</p>
+  </header>
+
+  <!-- 1. 입장 -->
+  <section id="gate" class="card">
+    <label for="pw">입장 비밀번호</label>
+    <input type="password" id="pw" placeholder="비밀번호를 입력하세요" autocomplete="off">
+    <div class="error" id="pw-error"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary grow" id="pw-btn">입장</button>
+    </div>
+  </section>
+
+  <!-- 2. 시작 화면 -->
+  <section id="lobby" class="card hidden">
+    <div class="stats">
+      <div class="stat"><div class="num" id="st-total">25</div><div class="lbl">전체 문제</div></div>
+      <div class="stat"><div class="num" id="st-ready">0</div><div class="lbl">확인된 문제</div></div>
+      <div class="stat"><div class="num" id="st-best">-</div><div class="lbl">최고 점수</div></div>
+    </div>
+    <div class="notice" id="ready-notice"></div>
+    <div class="slot-grid" id="slot-grid"></div>
+
+    <div class="option-group">
+      <label class="radio-line"><input type="radio" name="order" value="seq" checked> 번호 순서대로 풀기</label>
+      <label class="radio-line"><input type="radio" name="order" value="rand"> 무작위 순서로 풀기</label>
+      <label class="radio-line"><input type="checkbox" id="opt-shuffle-choices"> 객관식 보기 순서도 섞기</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary grow" id="start-btn">시험 시작</button>
+    </div>
+  </section>
+
+  <!-- 3. 문제 화면 -->
+  <section id="quiz" class="card hidden">
+    <div class="progress-wrap">
+      <span id="prog-text"></span>
+      <span id="prog-score"></span>
+    </div>
+    <div class="bar"><div id="prog-bar"></div></div>
+
+    <div class="q-head">
+      <span class="badge type" id="q-type"></span>
+      <span class="badge" id="q-no"></span>
+      <span class="badge" id="q-diff"></span>
+    </div>
+    <div class="q-note hidden" id="q-note"></div>
+    <div class="q-text" id="q-text"></div>
+
+    <div id="mc-area" class="choices"></div>
+
+    <div id="short-area" class="hidden">
+      <textarea id="short-input" placeholder="답안을 입력하세요"></textarea>
+    </div>
+
+    <div id="result" class="hidden">
+      <div class="result-line" id="result-line"></div>
+      <div class="selfgrade hidden" id="selfgrade">
+        자동 채점 결과가 다르다면 직접 판정:
+        <button class="btn" data-grade="1">정답 처리</button>
+        <button class="btn" data-grade="0">오답 처리</button>
+      </div>
+      <div class="explain" id="explain"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" id="quit-btn">그만두기</button>
+      <button class="btn btn-primary grow" id="check-btn" disabled>정답 확인</button>
+      <button class="btn btn-primary grow hidden" id="next-btn">다음 문제</button>
+    </div>
+  </section>
+
+  <!-- 4. 결과 화면 -->
+  <section id="summary" class="card hidden">
+    <div class="score-big" id="sum-score"></div>
+    <div class="score-sub" id="sum-sub"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary grow" id="retry-btn">다시 풀기</button>
+      <button class="btn grow" id="retry-wrong-btn">틀린 문제만 다시 풀기</button>
+      <button class="btn" id="home-btn">처음으로</button>
+    </div>
+    <h3 style="margin:22px 0 6px;">문제별 결과</h3>
+    <div id="review"></div>
+  </section>
+
+  <footer>
+    개인 학습용 · 해설은 강의 중 교수님 워딩을 기준으로 정리 ·
+    <button class="link-btn" id="logout-btn">잠금</button>
+  </footer>
+</div>
+
+<script src="questions.js"></script>
+<script>
+(function () {
+  const PASSWORD = "HBS13";
+  const SESSION_KEY = "hbs13_m6_auth";
+  const BEST_KEY = "hbs13_m6_best";
+
+  const META = window.QUIZ_META || { totalQuestions: 25, mcCount: 20, shortCount: 5 };
+  const ALL = (window.QUIZ_QUESTIONS || []).slice().sort((a, b) => a.no - b.no);
+  const MARKS = ["①", "②", "③", "④", "⑤"];
+
+  const $ = (id) => document.getElementById(id);
+  const show = (el) => el.classList.remove("hidden");
+  const hide = (el) => el.classList.add("hidden");
+
+  function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function safeDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+  // ---------- 상태 ----------
+  let queue = [];      // 이번 회차에 풀 문제 목록 (보기 섞기 반영)
+  let idx = 0;
+  let answers = [];    // { q, picked, correct, text }
+  let selected = null; // 현재 객관식 선택 인덱스
+  let checked = false;
+
+  // ---------- 입장 ----------
+  function tryLogin() {
+    const v = $("pw").value.trim();
+    if (v === PASSWORD) {
+      safeSet(SESSION_KEY, "1");
+      $("pw-error").textContent = "";
+      $("pw").value = "";
+      openLobby();
+    } else {
+      $("pw-error").textContent = "비밀번호가 올바르지 않습니다.";
+      $("pw").focus();
+    }
+  }
+  $("pw-btn").addEventListener("click", tryLogin);
+  $("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
+  $("logout-btn").addEventListener("click", () => {
+    safeDel(SESSION_KEY);
+    [ $("lobby"), $("quiz"), $("summary") ].forEach(hide);
+    show($("gate"));
+    $("pw").focus();
+  });
+
+  // ---------- 로비 ----------
+  function openLobby() {
+    hide($("gate")); hide($("quiz")); hide($("summary"));
+    show($("lobby"));
+    $("st-total").textContent = META.totalQuestions;
+    $("st-ready").textContent = ALL.length;
+    const best = safeGet(BEST_KEY);
+    $("st-best").textContent = best ? `${best}%` : "-";
+
+    const mc = ALL.filter(q => q.type === "mc").length;
+    const sh = ALL.filter(q => q.type === "short").length;
+    const remain = META.totalQuestions - ALL.length;
+    $("ready-notice").textContent = remain > 0
+      ? `현재 ${ALL.length}문제(객관식 ${mc} · 주관식 ${sh})가 확인되어 있습니다. 나머지 ${remain}문제는 확인되는 대로 추가됩니다.`
+      : `전체 ${ALL.length}문제(객관식 ${mc} · 주관식 ${sh})가 모두 준비되었습니다.`;
+
+    const grid = $("slot-grid");
+    grid.innerHTML = "";
+    const readySet = new Set(ALL.map(q => q.no));
+    for (let n = 1; n <= META.totalQuestions; n++) {
+      const d = document.createElement("div");
+      d.className = "slot" + (readySet.has(n) ? " ok" : "") + (n > META.mcCount ? " short" : "");
+      d.textContent = n;
+      d.title = readySet.has(n) ? "확인됨" : "미확인";
+      grid.appendChild(d);
+    }
+    $("start-btn").disabled = ALL.length === 0;
+  }
+
+  // ---------- 시험 진행 ----------
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function prepareQueue(source) {
+    const order = document.querySelector('input[name="order"]:checked').value;
+    const shuffleChoices = $("opt-shuffle-choices").checked;
+    let list = order === "rand" ? shuffle(source) : source.slice().sort((a, b) => a.no - b.no);
+    return list.map((q) => {
+      if (q.type === "mc" && shuffleChoices) {
+        const perm = shuffle(q.choices.map((_, i) => i));
+        return {
+          ...q,
+          choices: perm.map(i => q.choices[i]),
+          answer: perm.indexOf(q.answer),
+          _orig: q,
+        };
+      }
+      return { ...q, _orig: q };
+    });
+  }
+
+  function startQuiz(source) {
+    if (!source.length) return;
+    queue = prepareQueue(source);
+    idx = 0; answers = [];
+    hide($("lobby")); hide($("summary"));
+    show($("quiz"));
+    renderQuestion();
+  }
+
+  $("start-btn").addEventListener("click", () => startQuiz(ALL));
+
+  function renderQuestion() {
+    const q = queue[idx];
+    selected = null; checked = false;
+
+    $("prog-text").textContent = `${idx + 1} / ${queue.length}`;
+    const correctSoFar = answers.filter(a => a.correct).length;
+    $("prog-score").textContent = `정답 ${correctSoFar} / ${answers.length}`;
+    $("prog-bar").style.width = `${(idx / queue.length) * 100}%`;
+
+    $("q-type").textContent = q.type === "mc" ? "객관식" : "주관식";
+    $("q-no").textContent = `문제 ${q.no}`;
+    $("q-diff").textContent = q.difficulty ? `난이도 ${q.difficulty}` : "난이도 미확인";
+    $("q-text").textContent = q.question;
+    if (q.note) { $("q-note").textContent = q.note; show($("q-note")); } else { hide($("q-note")); }
+
+    hide($("result")); hide($("selfgrade"));
+    hide($("next-btn")); show($("check-btn"));
+    $("check-btn").disabled = true;
+
+    if (q.type === "mc") {
+      show($("mc-area")); hide($("short-area"));
+      const area = $("mc-area");
+      area.innerHTML = "";
+      q.choices.forEach((c, i) => {
+        const b = document.createElement("button");
+        b.className = "choice";
+        b.type = "button";
+        b.innerHTML = `<span class="mark">${MARKS[i]}</span><span></span>`;
+        b.lastChild.textContent = c;
+        b.addEventListener("click", () => {
+          if (checked) return;
+          selected = i;
+          area.querySelectorAll(".choice").forEach((el, k) => el.classList.toggle("selected", k === i));
+          $("check-btn").disabled = false;
+        });
+        area.appendChild(b);
+      });
+    } else {
+      hide($("mc-area")); show($("short-area"));
+      const ta = $("short-input");
+      ta.value = ""; ta.disabled = false;
+      $("check-btn").disabled = false;
+      setTimeout(() => ta.focus(), 50);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function normalize(s) {
+    return (s || "").toLowerCase().replace(/[\s\.,、·\-_/()\[\]{}'"“”‘’!?:;~]/g, "");
+  }
+
+  function gradeShort(q, text) {
+    const t = normalize(text);
+    if (!t) return false;
+    return (q.answers || []).some(a => {
+      const n = normalize(a);
+      return n && t.includes(n);
+    });
+  }
+
+  function checkAnswer() {
+    if (checked) return;
+    const q = queue[idx];
+    let correct, picked = null, text = null;
+
+    if (q.type === "mc") {
+      if (selected === null) return;
+      picked = selected;
+      correct = selected === q.answer;
+      const btns = $("mc-area").querySelectorAll(".choice");
+      btns.forEach((b, i) => {
+        b.disabled = true;
+        if (i === q.answer) b.classList.add("correct");
+        else if (i === selected) b.classList.add("wrong");
+      });
+    } else {
+      text = $("short-input").value;
+      $("short-input").disabled = true;
+      correct = gradeShort(q, text);
+      show($("selfgrade"));
+    }
+    checked = true;
+    answers.push({ q, picked, text, correct });
+    showResult(q, correct);
+  }
+
+  function showResult(q, correct) {
+    const line = $("result-line");
+    line.className = "result-line " + (correct ? "ok" : "ng");
+    if (q.type === "mc") {
+      line.textContent = correct ? "정답입니다!" : `오답입니다. 정답은 ${MARKS[q.answer]}번입니다.`;
+    } else {
+      line.textContent = correct ? "정답으로 판정되었습니다." : "오답으로 판정되었습니다. 모범 답안과 비교해 보세요.";
+    }
+    const ex = $("explain");
+    ex.innerHTML = "";
+    if (q.type === "short" && q.model) {
+      const m = document.createElement("div");
+      m.innerHTML = "<strong>모범 답안</strong>";
+      m.appendChild(document.createTextNode(q.model));
+      ex.appendChild(m);
+      ex.appendChild(document.createElement("br"));
+    }
+    const e = document.createElement("div");
+    e.innerHTML = "<strong>해설</strong>";
+    e.appendChild(document.createTextNode(q.explanation || "해설 미확인"));
+    ex.appendChild(e);
+    show($("result"));
+    hide($("check-btn")); show($("next-btn"));
+    $("next-btn").textContent = idx + 1 >= queue.length ? "결과 보기" : "다음 문제";
+    $("next-btn").focus();
+  }
+
+  $("selfgrade").querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => {
+      const last = answers[answers.length - 1];
+      if (!last) return;
+      last.correct = b.dataset.grade === "1";
+      showResult(last.q, last.correct);
+    });
+  });
+
+  $("check-btn").addEventListener("click", checkAnswer);
+  $("short-input").addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") checkAnswer();
+  });
+  $("next-btn").addEventListener("click", () => {
+    idx++;
+    if (idx >= queue.length) finish(); else renderQuestion();
+  });
+  $("quit-btn").addEventListener("click", () => {
+    if (answers.length === 0 || confirm("지금까지의 진행을 종료하고 결과를 볼까요?")) {
+      if (answers.length === 0) openLobby(); else finish();
+    }
+  });
+
+  // ---------- 결과 ----------
+  function finish() {
+    hide($("quiz")); show($("summary"));
+    const total = answers.length;
+    const correct = answers.filter(a => a.correct).length;
+    const pct = total ? Math.round((correct / total) * 100) : 0;
+    $("sum-score").textContent = `${correct} / ${total}`;
+    $("sum-sub").textContent = `정답률 ${pct}%`;
+
+    // 최고 점수는 전체 확인 문제를 순서/무작위 상관없이 모두 풀었을 때만 기록
+    if (total === ALL.length && total > 0) {
+      const prev = safeGet(BEST_KEY);
+      const prevPct = prev ? parseInt(prev, 10) : -1;
+      if (pct > prevPct) safeSet(BEST_KEY, String(pct));
+    }
+
+    const review = $("review");
+    review.innerHTML = "";
+    answers.forEach(a => {
+      const q = a.q;
+      const d = document.createElement("div");
+      d.className = "review-item";
+      const head = document.createElement("div");
+      head.className = "rq";
+      head.textContent = `${a.correct ? "✅" : "❌"} 문제 ${q.no}. ${q.question}`;
+      d.appendChild(head);
+      const ra = document.createElement("div");
+      ra.className = "ra";
+      if (q.type === "mc") {
+        ra.innerHTML = "정답: <span></span> · 내 답: <span></span>";
+        ra.querySelectorAll("span")[0].textContent = `${MARKS[q.answer]} ${q.choices[q.answer]}`;
+        ra.querySelectorAll("span")[1].textContent = a.picked === null ? "-" : `${MARKS[a.picked]} ${q.choices[a.picked]}`;
+      } else {
+        ra.innerHTML = "모범 답안: <span></span><br>내 답: <span></span>";
+        ra.querySelectorAll("span")[0].textContent = q.model || (q.answers || []).join(", ");
+        ra.querySelectorAll("span")[1].textContent = a.text || "-";
+      }
+      d.appendChild(ra);
+      review.appendChild(d);
+    });
+    $("retry-wrong-btn").disabled = correct === total;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  $("retry-btn").addEventListener("click", () => startQuiz(ALL));
+  $("retry-wrong-btn").addEventListener("click", () => {
+    const wrong = answers.filter(a => !a.correct).map(a => a.q._orig || a.q);
+    startQuiz(wrong);
+  });
+  $("home-btn").addEventListener("click", openLobby);
+
+  // ---------- 초기화 ----------
+  document.title = "HBS13 재무 Final Test";
+  if (META.title) $("title").textContent = META.title;
+  if (safeGet(SESSION_KEY) === "1") openLobby();
+  else $("pw").focus();
+})();
+</script>
+</body>
+</html>
