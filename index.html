@@ -668,7 +668,9 @@
   function gradeShort(q, text) {
     const t = normalize(text);
     if (!t) return false;
-    return (q.answers || []).some(a => { const n = normalize(a); return n && t.includes(n); });
+    const keys = q.answers || [];
+    if (!keys.length) return false;
+    return keys.every(a => { const n = normalize(a); return n && t.includes(n); });
   }
 
   function checkAnswer() {
